@@ -14,7 +14,7 @@ authors: Ad5001, XenialDan
 main: Ad5001\BetterGen\Main
 version: 2.0
 load: STARTUP
-api: [3.0.0-ALPHA3, 3.0.0-ALPHA5]
+api: [3.0.0-ALPHA9]
 commands:
     createworld:
         description: Generates a new world.
