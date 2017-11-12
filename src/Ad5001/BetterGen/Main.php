@@ -25,16 +25,13 @@ use pocketmine\block\Block;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\command\ConsoleCommandSender;
-use pocketmine\event\block\BlockBreakEvent;
+use pocketmine\event\level\ChunkLoadEvent;
 use pocketmine\event\level\ChunkPopulateEvent;
 use pocketmine\event\Listener;
-use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\level\generator\biome\Biome;
 use pocketmine\level\generator\Generator;
-use pocketmine\nbt\tag\CompoundTag;
-use pocketmine\nbt\tag\IntTag;
-use pocketmine\nbt\tag\ListTag;
-use pocketmine\nbt\tag\StringTag;
+use pocketmine\level\Level;
+use pocketmine\math\Vector3;
 use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\tile\Chest;
@@ -222,7 +219,6 @@ class Main extends PluginBase implements Listener {
 		return BetterForest::registerForest($name, $treeClass, $infos);
 	}
 
-
 	/**
 	 * Checks when a chunk populates to populate chests back
 	 *
@@ -242,50 +238,25 @@ class Main extends PluginBase implements Listener {
 		}
 	}
 
-
 	/**
-	 * Checks when a player touches an ungenerated chest to generate it.
+	 * Loads chest tiles on chest blocks when a chunk is loaded
 	 *
-	 * @param PlayerInteractEvent $event
-	 * @return void
+	 * @param ChunkLoadEvent $event
 	 */
-	public function onInteract(PlayerInteractEvent $event) {
-		$cfg = new Config(LootTable::getPluginFolder() . "processingLoots.json", Config::JSON);
-		if ($event->getBlock()->getId() !== Block::CHEST) return;
-		if (!$cfg->exists($event->getBlock()->getX() . ";" . $event->getBlock()->getY() . ";" . $event->getBlock()->getZ())) return;
-		$nbt = new CompoundTag("", [
-			new ListTag("Items", []),
-			new StringTag("id", Tile::CHEST),
-			new IntTag("x", $event->getBlock()->x),
-			new IntTag("y", $event->getBlock()->y),
-			new IntTag("z", $event->getBlock()->z)
-		]);
-		/** @var Chest $chest */
-		$chest = Tile::createTile(Tile::CHEST, $event->getBlock()->getLevel(), $nbt);
-		$chest->setName("§k(Fake)§r Minecart chest");
-		LootTable::fillChest($chest->getInventory(), $event->getBlock());
-	}
-
-	/**
-	 * Checks when a players breaks an ungenerated chest to generate it.
-	 *
-	 * @param BlockBreakEvent $event
-	 * @return void
-	 */
-	public function onBlockBreak(BlockBreakEvent $event) {
-		$cfg = new Config(LootTable::getPluginFolder() . "processingLoots.json", Config::JSON);
-		if ($event->getBlock()->getId() !== Block::CHEST) return;
-		if (!$cfg->exists($event->getBlock()->getX() . ";" . $event->getBlock()->getY() . ";" . $event->getBlock()->getZ())) return;
-		$nbt = new CompoundTag("", [
-			new ListTag("Items", []),
-			new StringTag("id", Tile::CHEST),
-			new IntTag("x", $event->getBlock()->x),
-			new IntTag("y", $event->getBlock()->y),
-			new IntTag("z", $event->getBlock()->z)
-		]);
-		/** @var Chest $chest */
-		$chest = Tile::createTile(Tile::CHEST, $event->getBlock()->getLevel(), $nbt);
-		$chest->setName("§k(Fake)§r Minecart chest");
-		LootTable::fillChest($chest->getInventory(), $event->getBlock());
+	public function onChunkLoad(ChunkLoadEvent $event) {
+		if ($event->getLevel()->getProvider()->getGenerator() === "betternormal") {
+			$chunk = $event->getChunk();
+			for ($x = 0; $x < 16; $x++) {
+				for ($z = 0; $z < 16; $z++) {
+					for ($y = 0; $y <= Level::Y_MAX; $y++) {
+						$id = $chunk->getBlockId($x, $y, $z);
+						$tile = $chunk->getTile($x, $y, $z);
+						if($id === Block::CHEST and $tile === null) {
+							Tile::createTile(Tile::CHEST, $event->getLevel(), Chest::createNBT($pos = new Vector3($chunk->getX() * 16 + $x, $y, $chunk->getZ() * 16 + $z), null)); //TODO: set face correctly
+						}
+					}
+				}
+			}
+		}
 	}
 }
