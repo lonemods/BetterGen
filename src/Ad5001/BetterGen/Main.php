@@ -23,23 +23,23 @@ use Ad5001\BetterGen\structure\SakuraTree;
 use Ad5001\BetterGen\structure\Temple;
 use Ad5001\BetterGen\structure\Well;
 use pocketmine\block\Block;
-use pocketmine\block\Chest;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
-use pocketmine\event\block\BlockBreakEvent;
+use pocketmine\event\level\ChunkLoadEvent;
 use pocketmine\event\Listener;
-use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\item\Item;
 use pocketmine\level\generator\biome\Biome;
 use pocketmine\level\generator\Generator;
 use pocketmine\level\generator\object\OakTree;
+use pocketmine\level\Level;
 use pocketmine\level\Position;
+use pocketmine\math\Vector3;
 use pocketmine\nbt\tag\CompoundTag;
 use pocketmine\nbt\tag\IntTag;
 use pocketmine\nbt\tag\StringTag;
 use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
-use pocketmine\tile\Chest as TileChest;
+use pocketmine\tile\Chest;
 use pocketmine\tile\Tile;
 use pocketmine\utils\Config;
 use pocketmine\utils\Random;
@@ -48,6 +48,7 @@ use pocketmine\utils\TextFormat;
 class Main extends PluginBase implements Listener {
 	const PREFIX = "§l§o§b[§r§l§2Better§aGen§o§b]§r§f ";
 	const SAKURA_FOREST = 100; // Letting some place for future biomes.
+	/** @var Main */
 	private static $instance;
 
 
@@ -75,7 +76,7 @@ class Main extends PluginBase implements Listener {
 			new IntTag("z", (int)$block->z),
 			new StringTag("generateLoot", $lootfile)
 		]);
-		$tile = new TileChest($block->getLevel(), $nbt);
+		$tile = new Chest($block->getLevel(), $nbt);
 		$tile->spawnToAll();
 	}
 
@@ -293,45 +294,28 @@ class Main extends PluginBase implements Listener {
 		return BetterForest::registerForest($name, $treeClass, $infos);
 	}
 
-	/**
-	 * Checks when a player attempts to open a loot chest which is not created yet
-	 * @param PlayerInteractEvent $event
-	 */
-	public function onInteract(PlayerInteractEvent $event) {
-		if (($block = $event->getBlock())->getId() !== Block::CHEST || $event->getAction() !== PlayerInteractEvent::RIGHT_CLICK_BLOCK) return;
-		$this->generateLootChest($block);
-	}
-
-	/**
-	 * Fills a chest with loot
-	 * @param Block $block
-	 * @param Random|null $random
-	 */
-	static public function generateLootChest(Block $block, Random $random = null) {
-		if (!$block instanceof Chest) return;
-		$tile = $block->getLevel()->getTile($block);
-		if (is_null($tile)) {
-			//TODO new tile, but no loot, because we don't know which type of loot chest this is
-			$nbt = new CompoundTag("", [
-				new StringTag("id", Tile::CHEST),
-				new IntTag("x", (int)$block->x),
-				new IntTag("y", (int)$block->y),
-				new IntTag("z", (int)$block->z)
-			]);
-			$tile = new TileChest($block->getLevel(), $nbt);
-			$tile->spawnToAll();
-			return;
+	public function onChunkLoad(ChunkLoadEvent $event) {
+		if ($event->getLevel()->getProvider()->getGenerator() === "betternormal") {
+			$chunk = $event->getChunk();
+			for ($x = 0; $x < 16; $x++) {
+				for ($z = 0; $z < 16; $z++) {
+					for ($y = 0; $y <= Level::Y_MAX; $y++) {
+						$id = $chunk->getBlockId($x, $y, $z);
+						$tile = $chunk->getTile($x, $y, $z);
+						if($id === Block::CHEST and $tile === null) {
+							/** @var Chest $tile */
+							$tile = Tile::createTile(Tile::CHEST, $event->getLevel(), Chest::createNBT($pos = new Vector3($chunk->getX() * 16 + $x, $y, $chunk->getZ() * 16 + $z), null)); //TODO: set face correctly
+							$table = new LootTable($config = new Config(self::$instance->getDataFolder() . 'addon\\' . $tile->namedtag->generateLoot . '.json', Config::DETECT, []));
+							$size = $tile->getInventory()->getSize();
+							$loot = $table->getRandomLoot(null);
+							$items = array_pad($loot, $size, Item::get(Item::AIR));
+							shuffle($items);
+							$tile->getInventory()->setContents($items);
+						}
+					}
+				}
+			}
 		}
-		if (!$tile instanceof TileChest) return;
-		//Check if lootchest (or already generated loot)
-		if (!isset($tile->namedtag->generateLoot)) return;
-		$table = new LootTable($config = new Config(self::getInstance()->getDataFolder() . 'addon\\' . $tile->namedtag->generateLoot . '.json', Config::DETECT, []));
-		$size = $tile->getInventory()->getSize();
-		$loot = $table->getRandomLoot($random);
-		$items = array_pad($loot, $size, Item::get(0));
-		shuffle($items);
-		$tile->getInventory()->setContents($items);
-		unset($tile->namedtag->generateLoot);
 	}
 
 	/**
@@ -339,14 +323,5 @@ class Main extends PluginBase implements Listener {
 	 */
 	static public function getInstance() {
 		return self::$instance;
-	}
-
-	/**
-	 * Checks when a player breaks a loot chest which is not created yet
-	 * @param BlockBreakEvent $event
-	 */
-	public function onBlockBreak(BlockBreakEvent $event) {
-		if (($block = $event->getBlock())->getId() !== Block::CHEST) return;
-		$this->generateLootChest($block);
 	}
 }
