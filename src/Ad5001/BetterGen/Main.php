@@ -28,8 +28,8 @@ use pocketmine\command\ConsoleCommandSender;
 use pocketmine\event\level\ChunkLoadEvent;
 use pocketmine\event\level\ChunkPopulateEvent;
 use pocketmine\event\Listener;
-use pocketmine\level\generator\biome\Biome;
-use pocketmine\level\generator\Generator;
+use pocketmine\level\biome\Biome;
+use pocketmine\level\generator\GeneratorManager;
 use pocketmine\level\Level;
 use pocketmine\math\Vector3;
 use pocketmine\Player;
@@ -61,7 +61,7 @@ class Main extends PluginBase implements Listener {
 	 */
 	public function onEnable() {
 		$this->getServer()->getPluginManager()->registerEvents($this, $this);
-		Generator::addGenerator(BetterNormal::class, "betternormal");
+		GeneratorManager::addGenerator(BetterNormal::class, "betternormal");
 		if ($this->isOtherNS()) $this->getLogger()->warning("Tesseract detected. Note that Tesseract is not up to date with the generation structure and some generation features may be limited or not working");
 		@mkdir(LootTable::getPluginFolder());
 		@mkdir(LootTable::getPluginFolder() . "loots");
@@ -101,15 +101,15 @@ class Main extends PluginBase implements Listener {
 						break;
 					case 1 : // /createworld <name>
 						$name = $args[0];
-						$generator = Generator::getGenerator("betternormal");
+						$generator = GeneratorManager::getGenerator("betternormal");
 						$generatorName = "betternormal";
 						$seed = $this->generateRandomSeed();
 						$options = [];
 						break;
 					case 2 : // /createworld <name> [generator = betternormal]
 						$name = $args[0];
-						$generator = Generator::getGenerator($args[1]);
-						if (Generator::getGeneratorName($generator) !== strtolower($args[1])) {
+						$generator = GeneratorManager::getGenerator($args[1]);
+						if(GeneratorManager::getGeneratorName($generator) !== strtolower($args[1])) {
 							$sender->sendMessage(self::PREFIX . "§4Could not find generator {$args[1]}. Are you sure it is registered?");
 							return true;
 						}
@@ -119,8 +119,8 @@ class Main extends PluginBase implements Listener {
 						break;
 					case 3 : // /createworld <name> [generator = betternormal] [seed = rand()]
 						$name = $args[0];
-						$generator = Generator::getGenerator($args[1]);
-						if (Generator::getGeneratorName($generator) !== strtolower($args[1])) {
+						$generator = GeneratorManager::getGenerator($args[1]);
+						if(GeneratorManager::getGeneratorName($generator) !== strtolower($args[1])) {
 							$sender->sendMessage(self::PREFIX . "§4Could not find generator {$args[1]}. Are you sure it is registered?");
 							return true;
 						}
@@ -136,8 +136,8 @@ class Main extends PluginBase implements Listener {
 						break;
 					default : // /createworld <name> [generator = betternormal] [seed = rand()] [options(json)]
 						$name = $args[0];
-						$generator = Generator::getGenerator($args[1]);
-						if (Generator::getGeneratorName($generator) !== strtolower($args[1])) {
+						$generator = GeneratorManager::getGenerator($args[1]);
+						if(GeneratorManager::getGeneratorName($generator) !== strtolower($args[1])) {
 							$sender->sendMessage(self::PREFIX . "§4Could not find generator {$args[1]}. Are you sure it is registered?");
 							return true;
 						}
@@ -168,6 +168,8 @@ class Main extends PluginBase implements Listener {
 				return true;
 				break;
 			case "worldtp":
+				if(!$sender instanceof Player)
+					return false;
 				if(isset($args[0])) {
 					if(is_null($this->getServer()->getLevelByName($args[0]))) {
 						$this->getServer()->loadLevel($args[0]);
@@ -182,7 +184,7 @@ class Main extends PluginBase implements Listener {
 				} else {
 					return false;
 				}
-				break;
+			break;
 			case 'temple':{
 				if($sender instanceof ConsoleCommandSender) return false;
 				/** @var Player $sender */

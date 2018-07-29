@@ -25,7 +25,6 @@ use pocketmine\level\generator\object\Tree as ObjectTree;
 use pocketmine\math\Vector3;
 use pocketmine\utils\Random;
 
-
 class FallenTree extends PopulatorObject {
 	public static $overridable = [ 
 			Block::AIR => true,
@@ -46,6 +45,7 @@ class FallenTree extends PopulatorObject {
 	protected $random;
 	/** @var int */
 	protected $length = 0;
+	public $trunk = [];
 
 	/**
 	 * Constructs the class
@@ -64,7 +64,8 @@ class FallenTree extends PopulatorObject {
 	 * @param int $y
 	 * @param int $z
 	 * @param Random $random
-	 * @return void
+	 *
+	 * @return bool
 	 */
 	public function canPlaceObject(ChunkManager $level, $x, $y, $z, Random $random) {
 		//echo "Checking at $x $y $z FallenTree\n";
@@ -76,12 +77,12 @@ class FallenTree extends PopulatorObject {
 			case 0:
 			case 1:// Z+
 			$return = array_merge(BuildingUtils::fillCallback(new Vector3($x, $y, $z), new Vector3($x, $y, $z + $this->length), function($v3, $level) {
-				if(!isset(\Ad5001\BetterGen\structure\FallenTree::$overridable[$level->getBlockIdAt($v3->x, $v3->y, $v3->z)])) {
+				if(!isset(self::$overridable[$level->getBlockIdAt($v3->x, $v3->y, $v3->z)])) {
 					//echo "$v3 is not overwritable (" . $level->getBlockIdAt($v3->x, $v3->y, $v3->z) . ").\n";
 					return false;
 				}
 			}, $level), BuildingUtils::fillCallback(new Vector3($x, $y - 1, $z), new Vector3($x, $y - 1, $z + $this->length), function($v3, $level) {
-				if(isset(\Ad5001\BetterGen\structure\FallenTree::$overridable[$level->getBlockIdAt($v3->x, $v3->y, $v3->z)])) {
+				if(isset(self::$overridable[$level->getBlockIdAt($v3->x, $v3->y, $v3->z)])) {
 					//echo "$v3 is overwritable (" . $level->getBlockIdAt($v3->x, $v3->y, $v3->z) . ").\n";
 					return false;
 				}
@@ -93,12 +94,12 @@ class FallenTree extends PopulatorObject {
 			case 2:
 			case 3: // X+
 			$return = array_merge(BuildingUtils::fillCallback(new Vector3($x, $y, $z), new Vector3($x + $this->length, $y, $z), function($v3, $level) {
-				if(!isset(\Ad5001\BetterGen\structure\FallenTree::$overridable[$level->getBlockIdAt($v3->x, $v3->y, $v3->z)])) {
+				if(!isset(self::$overridable[$level->getBlockIdAt($v3->x, $v3->y, $v3->z)])) {
 					//echo "$v3 is not overwritable (" . $level->getBlockIdAt($v3->x, $v3->y, $v3->z) . ").\n";
 					return false;
 				}
 			}, $level), BuildingUtils::fillCallback(new Vector3($x, $y - 1, $z), new Vector3($x + $this->length, $y - 1, $z), function($v3, $level) {
-				if(isset(\Ad5001\BetterGen\structure\FallenTree::$overridable[$level->getBlockIdAt($v3->x, $v3->y, $v3->z)])) {
+				if(isset(self::$overridable[$level->getBlockIdAt($v3->x, $v3->y, $v3->z)])) {
 					//echo "$v3 is overwritable (" . $level->getBlockIdAt($v3->x, $v3->y, $v3->z) . ").\n";
 					return false;
 				}

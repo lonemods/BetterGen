@@ -33,7 +33,6 @@ use pocketmine\level\Level;
 use pocketmine\math\Vector3;
 use pocketmine\utils\Random;
 
-
 class FloatingIslandPopulator extends AmountPopulator {
 	/** @var ChunkManager */
 	protected $level;
@@ -64,13 +63,14 @@ class FloatingIslandPopulator extends AmountPopulator {
 			}
 		} 
 	}
-	
-	
-	
+
 	/**
 	 * Gets the top block (y) on an x and z axes
+	 *
 	 * @param int $x
 	 * @param int $z
+	 *
+	 * @return int
 	 */
 	protected function getHighestWorkableBlock($x, $z) {
 		for($y = Level::Y_MAX - 1; $y > 0; -- $y) {
@@ -99,7 +99,6 @@ class FloatingIslandPopulator extends AmountPopulator {
 	public function buildIslandBottomShape(ChunkManager $level, Vector3 $pos, int $radius, Random $random) {
 		$pos = $pos->round();
 		$currentLen = 1;
-		$hBound = 0;
 		$current = 0;
 		for($y = $pos->y - 1; $radius > 0; $y--) {
 			for($x = $pos->x - $radius; $x <= $pos->x + $radius; $x++) {
@@ -124,7 +123,6 @@ class FloatingIslandPopulator extends AmountPopulator {
 				}
 			}
 			$current++;
-			$oldHB = $hBound;
 			$hBound = $random->nextFloat();
 			if($current >= $currentLen + $hBound) {
 				if($radius == 0) return $pos->y;

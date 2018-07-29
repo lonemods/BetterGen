@@ -17,12 +17,10 @@
 
 namespace Ad5001\BetterGen\populator;
 
-use Ad5001\BetterGen\utils\BuildingUtils;
 use Ad5001\BetterGen\structure\Dungeons;
 use pocketmine\block\Block;
 use pocketmine\level\ChunkManager;
 use pocketmine\level\Level;
-use pocketmine\math\Vector3;
 use pocketmine\utils\Random;
 
 class DungeonPopulator extends AmountPopulator {
